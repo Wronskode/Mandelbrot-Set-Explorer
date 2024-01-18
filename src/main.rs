@@ -30,7 +30,11 @@ pub fn main() {
     let mut i = 1;
     let mut opt = true;
     let mut modified = true;
+    let video = true;
+    let x_target = get_position(-0.5541669757014586, x_min, x_max, 0.0, width);
+    let y_target = get_position(0.6312605869248036, y_min, y_max, 0.0, height);
     // println!("{}", compute_area(x_min, x_max, y_min, y_max));
+    let mut s = 1.0;
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -41,27 +45,28 @@ pub fn main() {
                 } => break 'running,
                 | Event::MouseButtonDown { x, y, .. } => {
                     modified = true;
-                    canvas.set_draw_color(Color::RGB(255, 255, 255));
                     canvas.clear();
-                    let new_width = width/((i+1) as f64);
-                    let new_height = height/((i+1) as f64);
-                    let r1 = x as f64 / (width as f64);
-                    let r2 = y as f64 / (height as f64);
-                    let xmin = x_min;
-                    let xmax = x_max;
-                    let ymin = y_min;
-                    let ymax = y_max;
-                    x_min = get_position((x as f64)-r1*new_width, 0.0, width, x_min, x_max);
-                    y_min = get_position((y as f64)-r2*new_height, 0.0, height, y_min, y_max);
-                    x_max = get_position((x as f64)-r1*new_width +new_width, 0.0, width, xmin, xmax);
-                    y_max = get_position((y as f64)-r2*new_height +new_height, 0.0, height, ymin, ymax);
+                    let result = compute_zoom(width, height, x as f64, y as f64, x_min, x_max, y_min, y_max, (i+1) as f64);
+                    x_min = result.0;
+                    x_max = result.1;
+                    y_min = result.2;
+                    y_max = result.3;
                     i += 1;
                 }
                 | _ => {}
             }
         }
         // The rest of the game loop goes here...
-        // ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        if video {
+            canvas.clear();
+            s += 0.0001;
+            let result = compute_zoom(width, height, x_target as f64, y_target as f64, x_min, x_max, y_min, y_max, s);
+            x_min = result.0;
+            x_max = result.1;
+            y_min = result.2;
+            y_max = result.3;
+            modified = true;
+        }
         if modified {
             draw_mandelbrot_set(&mut canvas, nb_iterations, x_min, x_max, y_min, y_max, (width, height), opt);
         }
@@ -73,6 +78,22 @@ pub fn main() {
 
 fn get_position(x: f64, valeur_lue_min: f64, valeur_lue_max: f64, valeur_sortie_min: f64, valeur_sortie_max: f64) -> f64 {
     (x-valeur_lue_min)*(valeur_sortie_max-valeur_sortie_min)/(valeur_lue_max-valeur_lue_min)+valeur_sortie_min
+}
+
+fn compute_zoom(width: f64, height: f64, x: f64, y: f64, mut x_min: f64, mut x_max: f64, mut y_min: f64, mut y_max: f64, zoom_ratio: f64) -> (f64, f64, f64, f64) {
+    let new_width = width/zoom_ratio;
+    let new_height = height/zoom_ratio;
+    let r1 = x as f64 / (width as f64);
+    let r2 = y as f64 / (height as f64);
+    let xmin = x_min;
+    let xmax = x_max;
+    let ymin = y_min;
+    let ymax = y_max;
+    x_min = get_position((x as f64)-r1*new_width, 0.0, width, x_min, x_max);
+    y_min = get_position((y as f64)-r2*new_height, 0.0, height, y_min, y_max);
+    x_max = get_position((x as f64)-r1*new_width+new_width, 0.0, width, xmin, xmax);
+    y_max = get_position((y as f64)-r2*new_height+new_height, 0.0, height, ymin, ymax);
+    (x_min, x_max, y_min, y_max)
 }
 
 fn draw_mandelbrot_set(canvas: &mut Canvas<sdl2::video::Window>, iterations: u32, x1: f64, x2: f64, y1: f64, y2: f64, (w, h): (f64, f64), opt: bool) {
