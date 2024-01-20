@@ -129,10 +129,12 @@ fn draw_mandelbrot_set(
     y2: f64,
     (w, h): (f64, f64),
 ) {
+    let h_i32 = h as i32;
+    let w_i32 = w as i32;
     let t1 = thread::spawn(move || {
         let mut local_vec = vec![];
-        for j in 0..=(w as i32) {
-            for k in 0..(h as i32) / 4 {
+        for j in 0..=w_i32 {
+            for k in (0..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
                 let c = est_bornee(x, y, iterations);
@@ -145,8 +147,8 @@ fn draw_mandelbrot_set(
     });
     let t2 = thread::spawn(move || {
         let mut local_vec = vec![];
-        for j in 0..=(w as i32) {
-            for k in (h as i32) / 4..(h as i32) / 2 {
+        for j in 0..=w_i32 {
+            for k in (1..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
                 let c = est_bornee(x, y, iterations);
@@ -159,8 +161,8 @@ fn draw_mandelbrot_set(
     });
     let t3 = thread::spawn(move || {
         let mut local_vec = vec![];
-        for j in 0..=(w as i32) {
-            for k in (h as i32) / 2..3 * (h as i32) / 4 {
+        for j in 0..=w_i32 {
+            for k in (2..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
                 let c = est_bornee(x, y, iterations);
@@ -173,8 +175,8 @@ fn draw_mandelbrot_set(
     });
     let t4 = thread::spawn(move || {
         let mut local_vec = vec![];
-        for j in 0..=(w as i32) {
-            for k in 3 * (h as i32) / 4..=(h as i32) {
+        for j in 0..=w_i32 {
+            for k in (3..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
                 let c = est_bornee(x, y, iterations);
