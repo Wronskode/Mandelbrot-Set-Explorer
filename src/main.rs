@@ -13,10 +13,12 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let nb_iterations = 1000; // Adjust here the number of iterations (precision)
+    let video = true; // Enable auto-zoom ?
     let mut x_min = -2.0;
     let mut x_max = 0.5;
     let mut y_min = -1.12;
     let mut y_max = 1.12;
+    // println!("{}", compute_area(x_min, x_max, y_min, y_max, 100000, 10000));
     let rapport = (x_max - x_min) / (y_max - y_min);
     let height = 1000.0;
     let width = height * rapport;
@@ -29,10 +31,8 @@ pub fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 2.0;
     let mut modified = true;
-    let video = true;
-    let mut x_target = get_position(-0.5541669757014586, x_min, x_max, 0.0, width);
-    let mut y_target = get_position(0.6312605869248036, y_min, y_max, 0.0, height);
-    // println!("{}", compute_area(x_min, x_max, y_min, y_max));
+    let mut x_target = get_position(-0.5541669757014586, x_min, x_max, 0.0, width);  // Auto-zoom x target
+    let mut y_target = get_position(0.6312605869248036, y_min, y_max, 0.0, height);  // Auto-zoom z target
     let mut s = 1.0;
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -81,9 +81,9 @@ pub fn main() {
                 y_max,
                 (width, height),
             );
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
         }
         modified = false;
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }
@@ -214,15 +214,16 @@ fn est_bornee(a: f64, b: f64, iterations: u32) -> (bool, u32) {
     (true, 0)
 }
 
-fn compute_area(x_min: f64, x_max: f64, y_min: f64, y_max: f64) -> f64 {
+// Using Monte-carlo to calculate Mandelbrot set area
+fn compute_area(x_min: f64, x_max: f64, y_min: f64, y_max: f64, iterations: u32, precision: u32) -> f64 {
     let mut rng = rand::thread_rng();
     let total_area = (x_max - x_min) * (y_max - y_min);
     let mut i = 0;
     let mut c = 0;
-    while i < 1000000 {
+    while i < iterations {
         let x = rng.gen_range(x_min..=x_max);
         let y = rng.gen_range(y_min..=y_max);
-        if est_bornee(x, y, 100000).0 {
+        if est_bornee(x, y, precision).0 {
             c += 1;
         }
         i += 1;
