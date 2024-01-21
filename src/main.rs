@@ -108,15 +108,13 @@ fn compute_zoom(
     let r1 = x / width;
     let r2 = y / height;
     let xmin = x_min;
-    let xmax = x_max;
     let ymin = y_min;
-    let ymax = y_max;
     let x_target = x - r1 * new_width;
     let y_target = y - r2 * new_height;
     x_min = get_position(x_target, 0.0, width, x_min, x_max);
     y_min = get_position(y_target, 0.0, height, y_min, y_max);
-    x_max = get_position(x - r1 * new_width + new_width, 0.0, width, xmin, xmax);
-    y_max = get_position(y - r2 * new_height + new_height, 0.0, height, ymin, ymax);
+    x_max = get_position(x_target + new_width, 0.0, width, xmin, x_max);
+    y_max = get_position(y_target + new_height, 0.0, height, ymin, y_max);
     (x_min, x_max, y_min, y_max, x_target, y_target)
 }
 
@@ -137,9 +135,9 @@ fn draw_mandelbrot_set(
             for k in (0..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
-                let c = est_bornee(x, y, iterations);
-                if !c.0 {
-                    local_vec.push((j, k, 255 as u8, (c.1 * 15) as u8, 0_u8));
+                let est_bornee = est_bornee(x, y, iterations);
+                if !est_bornee.0 {
+                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
                 }
             }
         }
@@ -151,9 +149,9 @@ fn draw_mandelbrot_set(
             for k in (1..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
-                let c = est_bornee(x, y, iterations);
-                if !c.0 {
-                    local_vec.push((j, k, 255 as u8, (c.1 * 15) as u8, 0_u8));
+                let est_bornee = est_bornee(x, y, iterations);
+                if !est_bornee.0 {
+                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
                 }
             }
         }
@@ -165,9 +163,9 @@ fn draw_mandelbrot_set(
             for k in (2..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
-                let c = est_bornee(x, y, iterations);
-                if !c.0 {
-                    local_vec.push((j, k, 255 as u8, (c.1 * 15) as u8, 0_u8));
+                let est_bornee = est_bornee(x, y, iterations);
+                if !est_bornee.0 {
+                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
                 }
             }
         }
@@ -179,9 +177,9 @@ fn draw_mandelbrot_set(
             for k in (3..= h_i32).step_by(4) {
                 let x = get_position(j as f64, 0.0, w, x1, x2);
                 let y = get_position(k as f64, 0.0, h, y1, y2);
-                let c = est_bornee(x, y, iterations);
-                if !c.0 {
-                    local_vec.push((j, k, 255 as u8, (c.1 * 15) as u8, 0_u8));
+                let est_bornee = est_bornee(x, y, iterations);
+                if !est_bornee.0 {
+                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
                 }
             }
         }
