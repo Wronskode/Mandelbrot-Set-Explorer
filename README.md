@@ -1,6 +1,6 @@
 1. Install SDL2, follows intructions here : https://crates.io/crates/sdl2
-2. Define number of iterations (at the begining of main function, default is 1000)
-3. Run and click to zoom at one point
+2. Define number of iterations (at the begining of main function, default is 1000) and if you want a auto-zoom (default is yes)
+3. Run (./mandelbrot n, where n is the number of threads that you want to use, 4 by default) and click somewhere to zoom in on this point.
 
 ![Capture d’écran du 2024-01-18 00-59-15](https://github.com/Wronskode/Mandelbrot-Set-Explorer/assets/142849734/71d781c1-a2d7-4c16-ad9d-875b5fee02ab)
 

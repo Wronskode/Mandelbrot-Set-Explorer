@@ -10,6 +10,24 @@ use std::thread;
 use std::time::Duration;
 
 pub fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let number_threads = if args.len() > 1 {
+        match args[1].parse::<usize>() {
+            Ok(k) => k,
+            Err(_) => {
+                if args.len() > 2 {
+                    match args[2].parse::<usize>() {
+                        Ok(k) => k,
+                        Err(_) => 4,
+                    }
+                } else {
+                    4
+                }
+            }
+        }
+    } else {
+        4
+    };
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let nb_iterations = 1000; // Adjust here the number of iterations (precision)
@@ -31,8 +49,8 @@ pub fn main() {
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 2.0;
     let mut modified = true;
-    let mut x_target = get_position(-0.5541669757014586, x_min, x_max, 0.0, width);  // Auto-zoom x target
-    let mut y_target = get_position(0.6312605869248036, y_min, y_max, 0.0, height);  // Auto-zoom z target
+    let mut x_target = get_position(-0.5541669757014586, x_min, x_max, 0.0, width); // Auto-zoom x target
+    let mut y_target = get_position(0.6312605869248036, y_min, y_max, 0.0, height); // Auto-zoom z target
     let mut s = 1.0;
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -79,7 +97,9 @@ pub fn main() {
                 x_max,
                 y_min,
                 y_max,
-                (width, height),
+                width, 
+                height,
+                number_threads,
             );
             canvas.set_draw_color(Color::RGB(0, 0, 0));
         }
@@ -125,71 +145,35 @@ fn draw_mandelbrot_set(
     x2: f64,
     y1: f64,
     y2: f64,
-    (w, h): (f64, f64),
+    w: f64,
+    h: f64,
+    number_threads: usize,
 ) {
     let h_i32 = h as i32;
     let w_i32 = w as i32;
-    let t1 = thread::spawn(move || {
-        let mut local_vec = vec![];
-        for j in 0..=w_i32 {
-            for k in (0..= h_i32).step_by(4) {
-                let x = get_position(j as f64, 0.0, w, x1, x2);
-                let y = get_position(k as f64, 0.0, h, y1, y2);
-                let est_bornee = est_bornee(x, y, iterations);
-                if !est_bornee.0 {
-                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
+    let mut threads = vec![];
+    for i in 0..number_threads as i32 {
+        let t = thread::spawn(move || {
+            let mut local_vec = vec![];
+            for j in 0..=w_i32 {
+                for k in (i..=h_i32).step_by(number_threads) {
+                    let x = get_position(j as f64, 0.0, w, x1, x2);
+                    let y = get_position(k as f64, 0.0, h, y1, y2);
+                    let est_bornee = est_bornee(x, y, iterations);
+                    if !est_bornee.0 {
+                        local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
+                    }
                 }
             }
-        }
-        local_vec
-    });
-    let t2 = thread::spawn(move || {
-        let mut local_vec = vec![];
-        for j in 0..=w_i32 {
-            for k in (1..= h_i32).step_by(4) {
-                let x = get_position(j as f64, 0.0, w, x1, x2);
-                let y = get_position(k as f64, 0.0, h, y1, y2);
-                let est_bornee = est_bornee(x, y, iterations);
-                if !est_bornee.0 {
-                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
-                }
-            }
-        }
-        local_vec
-    });
-    let t3 = thread::spawn(move || {
-        let mut local_vec = vec![];
-        for j in 0..=w_i32 {
-            for k in (2..= h_i32).step_by(4) {
-                let x = get_position(j as f64, 0.0, w, x1, x2);
-                let y = get_position(k as f64, 0.0, h, y1, y2);
-                let est_bornee = est_bornee(x, y, iterations);
-                if !est_bornee.0 {
-                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
-                }
-            }
-        }
-        local_vec
-    });
-    let t4 = thread::spawn(move || {
-        let mut local_vec = vec![];
-        for j in 0..=w_i32 {
-            for k in (3..= h_i32).step_by(4) {
-                let x = get_position(j as f64, 0.0, w, x1, x2);
-                let y = get_position(k as f64, 0.0, h, y1, y2);
-                let est_bornee = est_bornee(x, y, iterations);
-                if !est_bornee.0 {
-                    local_vec.push((j, k, 255 as u8, (est_bornee.1 * 15) as u8, 0_u8));
-                }
-            }
-        }
-        local_vec
-    });
-    let mut v1 = t1.join().unwrap();
-    v1.extend(t2.join().unwrap());
-    v1.extend(t3.join().unwrap());
-    v1.extend(t4.join().unwrap());
-    for element in v1 {
+            local_vec
+        });
+        threads.push(t);
+    }
+    let mut pixels = vec![];
+    for thread in threads {
+        pixels.extend(thread.join().unwrap());
+    }
+    for element in pixels {
         canvas.set_draw_color(Color::RGB(element.2, element.3, element.4));
         let _ = canvas.draw_point(Point::new(element.0, element.1));
     }
@@ -215,7 +199,14 @@ fn est_bornee(a: f64, b: f64, iterations: u32) -> (bool, u32) {
 }
 
 // Using Monte-carlo to calculate Mandelbrot set area
-fn compute_area(x_min: f64, x_max: f64, y_min: f64, y_max: f64, iterations: u32, precision: u32) -> f64 {
+fn compute_area(
+    x_min: f64,
+    x_max: f64,
+    y_min: f64,
+    y_max: f64,
+    iterations: u32,
+    precision: u32,
+) -> f64 {
     let mut rng = rand::thread_rng();
     let total_area = (x_max - x_min) * (y_max - y_min);
     let mut i = 0;
