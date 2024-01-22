@@ -63,18 +63,22 @@ pub fn main() {
                 Event::MouseButtonDown { x, y, .. } => {
                     modified = true;
                     canvas.clear();
+                    let x = x as f64;
+                    let y = y as f64;
+                    let real_part = get_position(x, 0.0, width, x_min, x_max);
+                    let imaginary_part = get_position(y, 0.0, height, y_min, y_max);
                     let result = compute_zoom(
-                        width, height, x as f64, y as f64, x_min, x_max, y_min, y_max, i,
+                        width, height, x, y, x_min, x_max, y_min, y_max, i,
                     );
                     x_min = result.0;
                     x_max = result.1;
                     y_min = result.2;
                     y_max = result.3;
-                    x_target = result.4;
-                    y_target = result.5;
+                    x_target = get_position(real_part, x_min, x_max, 0.0, width);
+                    y_target = get_position(imaginary_part, y_min, y_max, 0.0, height);
                     i += 1.0;
                 }
-                _ => {}
+                _ => ()
             }
         }
         if video {
@@ -97,7 +101,7 @@ pub fn main() {
                 x_max,
                 y_min,
                 y_max,
-                width, 
+                width,
                 height,
                 number_threads,
             );
@@ -122,20 +126,20 @@ fn compute_zoom(
     mut y_min: f64,
     mut y_max: f64,
     zoom_ratio: f64,
-) -> (f64, f64, f64, f64, f64, f64) {
+) -> (f64, f64, f64, f64) {
     let new_width = width / zoom_ratio;
     let new_height = height / zoom_ratio;
     let r1 = x / width;
     let r2 = y / height;
     let xmin = x_min;
     let ymin = y_min;
-    let x_target = x - r1 * new_width;
-    let y_target = y - r2 * new_height;
-    x_min = get_position(x_target, 0.0, width, x_min, x_max);
-    y_min = get_position(y_target, 0.0, height, y_min, y_max);
-    x_max = get_position(x_target + new_width, 0.0, width, xmin, x_max);
-    y_max = get_position(y_target + new_height, 0.0, height, ymin, y_max);
-    (x_min, x_max, y_min, y_max, x_target, y_target)
+    let x_min_pixel = x - r1 * new_width;
+    let y_min_pixel = y - r2 * new_height;
+    x_min = get_position(x_min_pixel, 0.0, width, x_min, x_max);
+    y_min = get_position(y_min_pixel, 0.0, height, y_min, y_max);
+    x_max = get_position(x_min_pixel + new_width, 0.0, width, xmin, x_max);
+    y_max = get_position(y_min_pixel + new_height, 0.0, height, ymin, y_max);
+    (x_min, x_max, y_min, y_max)
 }
 
 fn draw_mandelbrot_set(
